@@ -1,0 +1,10 @@
+{
+  "$schema": "https://anthropic.com/claude-code/plugin.schema.json",
+  "name": "visual-grilling",
+  "version": "0.1.0",
+  "description": "Grill a decision on a page the reader answers on, holding the turn open until they submit.",
+  "author": {
+    "name": "newstonnate-png",
+    "email": "259682407+newstonnate-png@users.noreply.github.com"
+  }
+}

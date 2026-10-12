@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Round Title</title>
+<!--
+  The page for one round. Replace the SAMPLE question below with the round's own,
+  one block per question on the frontier, and leave everything else as it is:
+  the tokens, the send block, the confirmation and the keyboard handling all
+  carry fixes that cost earlier rounds to find. Remove the sample before serving.
+
+  Question block, one per question:
+    <div class="q"> … </div>
+  Controls, by the shape of the answer:
+    one choice   → <input type="radio"    name="q1" id="q1a" value="A">
+    several      → <input type="checkbox" name="q1" id="q1a" value="A">
+    free text    → <input type="text" id="q1f" name="q1f">
+  Each option's <label class="row" for="…"> must name its own input's id.
+  Every question keeps a free-text field, whatever shape its options take.
+-->
+<style>
+  /* Colour is declared in all three scopes: the dark palette is never the only
+     definition of a colour, which is what turns text unreadable in one theme. */
+  :root{
+    --paper:#eef1f4; --sheet:#ffffff; --ink:#182430; --muted:#56534e;
+    --rule:#c9d3dd; --redline:#b4341f; --redline-soft:#fbeeea; --settled:#2c6152;
+    --settled-soft:#e6efec;
+    --display:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --body:ui-sans-serif,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    --gap:1.2rem; --radius:6px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#111820; --sheet:#18212b; --ink:#e6ecf2; --muted:#b3aea4;
+      --rule:#2d3a47; --redline:#ef8f77; --redline-soft:#2a1f1c; --settled:#7fc0a8;
+      --settled-soft:#16241f; color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#111820; --sheet:#18212b; --ink:#e6ecf2; --muted:#b3aea4;
+    --rule:#2d3a47; --redline:#ef8f77; --redline-soft:#2a1f1c; --settled:#7fc0a8;
+    --settled-soft:#16241f; color-scheme:dark;
+  }
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);
+       font-size:16px;line-height:1.55;padding-inline:16px;padding-block:2rem}
+  .sheet{max-width:52rem;margin-inline:auto;display:flex;flex-direction:column;gap:var(--gap)}
+  .eyebrow{font-family:var(--mono);font-size:.8rem;letter-spacing:.16em;text-transform:uppercase;
+           color:var(--muted);margin:0}
+  h1{font-family:var(--display);font-weight:600;font-size:clamp(1.5rem,4vw,2rem);line-height:1.15;
+     margin:0;text-wrap:balance}
+  .lede{margin:0;color:var(--muted);max-width:62ch}
+  .decided{background:var(--settled-soft);border:1px solid var(--settled);border-radius:var(--radius);
+           padding:.9rem 1rem;font-size:.92rem}
+  .decided h2{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;
+              color:var(--settled);margin:0 0 .4rem}
+  .decided ul{margin:0;padding-left:1.1rem}
+  .conflict{border:1px solid var(--redline);background:var(--redline-soft);border-radius:var(--radius);
+            padding:.9rem 1rem;font-size:.92rem}
+  .conflict h2{font-family:var(--mono);font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;
+               color:var(--redline);margin:0 0 .4rem}
+  .conflict p{margin:0}
+  figure{margin:0;background:var(--sheet);border:1px solid var(--rule);border-radius:var(--radius);padding:1rem}
+  svg{display:block;width:100%;max-width:100%;height:auto;color:var(--ink)}
+  figcaption{color:var(--muted);font-size:.88rem;margin-top:.55rem}
+  .q{background:var(--sheet);border:1px solid var(--rule);border-radius:var(--radius);padding:1.1rem;
+     display:flex;flex-direction:column;gap:.8rem}
+  .q h2{font-size:1.02rem;margin:0;font-weight:650}
+  .q h2 .n{font-family:var(--mono);color:var(--muted);font-weight:400;margin-right:.5rem}
+  .q h2 .kind{font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;
+              color:var(--settled);margin-left:.5rem}
+  .q p.body{margin:0;color:var(--muted);font-size:.94rem}
+  ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:.55rem}
+  ul li{border:1px solid var(--rule);border-radius:var(--radius);padding:.8rem .9rem}
+  ul li.rec{border-color:var(--redline);background:var(--redline-soft)}
+  label.row{display:grid;grid-template-columns:auto 1fr;gap:.7rem;align-items:start;cursor:pointer}
+  label.row input{margin-top:.3rem}
+  .label{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;font-weight:600;font-size:.95rem}
+  .tag{font-family:var(--mono);font-size:.75rem;letter-spacing:.07em;text-transform:uppercase;
+       color:var(--redline);border:1px solid currentColor;border-radius:999px;padding:.08rem .45rem}
+  .why{margin:.25rem 0 0;font-size:.9rem}
+  label.free{display:flex;flex-direction:column;gap:.35rem;font-size:.88rem;color:var(--muted)}
+  input[type=text]{font:inherit;color:var(--ink);background:var(--paper);border:1px solid var(--rule);
+                   border-radius:var(--radius);padding:.55rem .65rem;width:100%}
+  input[type=text]::placeholder{color:var(--muted);opacity:1}
+  .send{display:flex;flex-wrap:wrap;gap:.8rem;align-items:center;background:var(--sheet);
+        border:1px solid var(--rule);border-radius:var(--radius);padding:1rem}
+  button{font:inherit;font-weight:600;color:var(--sheet);background:var(--ink);border:0;
+         border-radius:var(--radius);padding:.65rem 1.1rem;cursor:pointer}
+  button:focus-visible{outline:2px solid var(--redline);outline-offset:2px}
+  .send p{margin:0;font-size:.9rem;color:var(--muted);flex:1 1 15rem;min-width:0}
+  .hintline{font-size:.84rem;color:var(--muted);margin:0}
+  kbd{font-family:var(--mono);font-size:.82em;border:1px solid var(--rule);border-bottom-width:2px;
+      border-radius:4px;padding:.05rem .35rem;background:var(--paper)}
+  code{font-family:var(--mono);font-size:.86em;background:var(--paper);padding:.05rem .25rem;border-radius:3px}
+  #sent{min-height:60vh;display:grid;place-items:center;text-align:center}
+  #sent h1{font-size:1.25rem;margin-bottom:.5rem}
+  #sent p{margin:.25rem 0;color:var(--muted)}
+  #sent .what{color:var(--ink);font-weight:600}
+</style>
+</head>
+<body>
+<div class="sheet" id="main">
+
+  <p class="eyebrow">Decision map &middot; round 1</p>
+  <h1>Round Title</h1>
+  <p class="lede">One or two sentences: what the round decides and why it is open now.</p>
+
+  <form method="post" action="/answers" autocomplete="off">
+
+  <!-- SAMPLE question — replace this block, and repeat it for each question on the
+       frontier. It sits inside the form: keep the <form> tag where it is. -->
+
+  <div class="q">
+    <h2><span class="n">Q1</span>The question, stated plainly<span class="kind">one answer</span></h2>
+    <p class="body">The facts that make it a question, in the reader's terms. Put what you looked up here
+      rather than asking them for it.</p>
+    <ul>
+      <li class="rec">
+        <label class="row" for="q1a">
+          <input type="radio" name="q1" id="q1a" value="A">
+          <span><span class="label">The recommended option <span class="tag">recommended</span></span>
+          <p class="why"><b>Why:</b> the reason it is recommended, then what taking it costs.</p></span>
+        </label>
+      </li>
+      <li>
+        <label class="row" for="q1b">
+          <input type="radio" name="q1" id="q1b" value="B">
+          <span><span class="label">The second option</span>
+          <p class="why"><b>Why:</b> what it buys, and what it costs.</p></span>
+        </label>
+      </li>
+      <li>
+        <label class="row" for="q1c">
+          <input type="radio" name="q1" id="q1c" value="C">
+          <span><span class="label">The third option</span>
+          <p class="why"><b>Why:</b> what it buys, and what it costs.</p></span>
+        </label>
+      </li>
+    </ul>
+    <label class="free" for="q1f">An answer the options missed
+      <input type="text" id="q1f" name="q1f" placeholder="Type yours">
+    </label>
+  </div>
+  <!-- /SAMPLE -->
+
+  <div class="send">
+    <p>Pick one per question, then press Send — or send with everything blank to let the recommendations
+      stand.</p>
+    <button type="submit">Send the round's answers</button>
+  </div>
+  <p class="hintline">Or press <kbd>Ctrl</kbd>+<kbd>Enter</kbd> to send from anywhere on the page. Plain Enter
+    stays inert, so nothing can fire by accident.</p>
+
+  </form>
+</div>
+
+<div id="sent" hidden>
+  <div>
+    <h1>Answers sent</h1>
+    <p class="what" id="what"></p>
+    <p>This tab closes itself in a moment. If it stays open, close it yourself.</p>
+  </div>
+</div>
+
+<script>
+(function(){
+  var form = document.querySelector('form');
+  if (!form) return;
+
+  /* Name every question's input name here, so the confirmation reports all of them. */
+  var NAMES = ['q1'];
+
+  function send(){
+    var said = [];
+    NAMES.forEach(function(n){
+      var picked = form.querySelector('input[name="'+n+'"]:checked');
+      said.push(picked ? n.toUpperCase()+' = '+picked.value : n.toUpperCase()+' = blank, recommendation stands');
+    });
+    NAMES.forEach(function(n){
+      var field = document.getElementById(n+'f');
+      var typed = field ? field.value.trim() : '';
+      if (typed) said.push(n.toUpperCase()+' note: '+typed);
+    });
+    document.getElementById('what').textContent = said.join(' · ');
+
+    var body = new URLSearchParams(new FormData(form));
+    fetch('/answers', { method:'POST', body: body }).then(function(){
+      document.getElementById('main').hidden = true;
+      document.getElementById('sent').hidden = false;
+      setTimeout(function(){ window.close(); }, 2500);
+    }, function(){ form.submit(); });   // fetch refused: post natively so the answers still land
+  }
+
+  form.addEventListener('keydown', function(ev){
+    if (ev.key !== 'Enter') return;
+    if (ev.ctrlKey || ev.metaKey){ ev.preventDefault(); send(); return; }        // the deliberate gesture
+    var t = ev.target;
+    if (t && t.tagName === 'INPUT' && t.type === 'text') ev.preventDefault();    // never the round
+  });
+
+  form.addEventListener('submit', function(ev){ ev.preventDefault(); send(); });
+})();
+</script>
+</body>
+</html>

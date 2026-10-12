@@ -1,0 +1,15 @@
+{
+  "name": "visual-grilling",
+  "description": "Grill a decision on a page the reader answers on, with the round held open until they submit.",
+  "owner": {
+    "name": "newstonnate-png",
+    "email": "259682407+newstonnate-png@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "visual-grilling",
+      "source": "./",
+      "description": "Grill a decision on a page the reader answers on, holding the turn open until they submit."
+    }
+  ]
+}
