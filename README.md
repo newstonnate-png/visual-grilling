@@ -10,6 +10,13 @@ shown with what taking it costs rather than argued in prose.
 Ships as a **Claude Code plugin** (skill and Stop hook installed together) and as a **Codex
 install** (the same hook, merged into `~/.codex/hooks.json`).
 
+![One round of visual grilling](docs/demo-round.png)
+
+*One round, photographed as it was served: the question set the agent could ask without
+guessing, a recommendation first each time with what the alternative costs, and a diagram
+where the choice is easier to see than to read. The answers to that round came back as the
+reason its turn resumed.*
+
 ## How a round works
 
 1. **Map the tree.** The subject becomes a decision tree; the *frontier* is every decision
@@ -153,6 +160,7 @@ hooks/hooks.json                  the Stop hook, registered by the Claude Code i
 hooks-handlers/stop-hook.py       holds the turn, delivers the answers, never deletes them
 bin/visual-grilling.py            status, doctor, install
 codex/README.md                   what Codex supports here, and what it cannot
+docs/demo-round.png               the screenshot above: one round as it was served
 tests/test-isolation.py           the checks
 ```
 
